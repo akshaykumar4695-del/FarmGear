@@ -1,0 +1,254 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const FarmGearApp());
+}
+
+class FarmGearApp extends StatelessWidget {
+  const FarmGearApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'FarmGear',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        primaryColor: const Color(0xFF059669),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF059669),
+          primary: const Color(0xFF059669),
+          secondary: const Color(0xFFD97706),
+        ),
+      ),
+      home: const MainHomeScreen(),
+    );
+  }
+}
+
+class MainHomeScreen extends StatefulWidget {
+  const MainHomeScreen({super.key});
+
+  @override
+  State<MainHomeScreen> createState() => _MainHomeScreenState();
+}
+
+class _MainHomeScreenState extends State<MainHomeScreen> {
+  bool isOwnerMode = false;
+  String selectedTask = 'All';
+  double maxDistance = 25.0;
+
+  final List<Map<String, dynamic>> equipmentList = [
+    {
+      'title': 'Mahindra 575 DI (45 HP)',
+      'task': 'Ploughing',
+      'rateHr': 500,
+      'rateAcre': 1200,
+      'dist': 4.2,
+      'attachments': 'Rotavator & Cultivator',
+      'fuel': 'Renter pays fuel',
+    },
+    {
+      'title': 'Swaraj 855 FE + Harvester',
+      'task': 'Harvesting',
+      'rateHr': 1100,
+      'rateAcre': 2200,
+      'dist': 8.5,
+      'attachments': 'Grain Harvester',
+      'fuel': 'Owner includes fuel',
+    },
+    {
+      'title': 'Precision Drone Sprayer (10L)',
+      'task': 'Spraying',
+      'rateHr': 400,
+      'rateAcre': 350,
+      'dist': 12.0,
+      'attachments': 'Liquid Fertilizer Spray',
+      'fuel': 'Battery included',
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF059669),
+        title: Row(
+          children: const [
+            Icon(Icons.agriculture, color: Colors.white, size: 28),
+            SizedBox(width: 8),
+            Text('FarmGear', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: Row(
+              children: [
+                Text(
+                  isOwnerMode ? "Owner" : "Farmer",
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+                Switch(
+                  value: isOwnerMode,
+                  activeColor: const Color(0xFFD97706),
+                  onChanged: (val) {
+                    setState(() {
+                      isOwnerMode = val;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      body: isOwnerMode ? _buildOwnerView() : _buildRenterView(),
+    );
+  }
+
+  Widget _buildRenterView() {
+    final filteredList = equipmentList.where((item) {
+      bool matchesTask = selectedTask == 'All' || item['task'] == selectedTask;
+      bool matchesDist = item['dist'] <= maxDistance;
+      return matchesTask && matchesDist;
+    }).toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Distance Filter:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text("${maxDistance.toInt()} km", style: const TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Slider(
+                    value: maxDistance,
+                    min: 5,
+                    max: 50,
+                    divisions: 9,
+                    activeColor: const Color(0xFF059669),
+                    onChanged: (val) {
+                      setState(() {
+                        maxDistance = val;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: ['All', 'Ploughing', 'Harvesting', 'Spraying'].map((task) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: FilterChip(
+                    label: Text(task),
+                    selected: selectedTask == task,
+                    selectedColor: const Color(0xFF059669),
+                    labelStyle: TextStyle(color: selectedTask == task ? Colors.white : Colors.black87),
+                    onSelected: (selected) {
+                      setState(() {
+                        selectedTask = task;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text("Available Equipment", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: filteredList.length,
+            itemBuilder: (context, index) {
+              final item = filteredList[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(14.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(item['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text("${item['dist']} km away", style: const TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text("Attachments: ${item['attachments']}"),
+                      Text("Fuel: ${item['fuel']}"),
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text("₹${item['rateHr']}/hr", style: const TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 18)),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF059669), foregroundColor: Colors.white),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Booking Request Sent via UPI!")),
+                              );
+                            },
+                            child: const Text("Book Now"),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOwnerView() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Card(
+            color: Color(0xFF059669),
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Monthly Revenue", style: TextStyle(color: Colors.white70)),
+                      Text("₹18,400", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Icon(Icons.account_balance_wallet, color: Colors.white, size: 36),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
