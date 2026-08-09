@@ -1,2 +1,0 @@
-# FarmGear
-FarmGear 
